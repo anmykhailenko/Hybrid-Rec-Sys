@@ -1,0 +1,35 @@
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
+
+# Example: Item descriptions (could be game descriptions, movie summaries, etc.)
+item_descriptions = [
+    "Action-packed thriller with espionage elements",
+    "Romantic comedy with a touch of drama",
+    "Sci-fi adventure exploring deep space",
+    "Historical drama set in ancient times",
+]
+
+# Step 1: Compute TF-IDF scores for item descriptions
+vectorizer = TfidfVectorizer()  # Initialize the TfidfVectorizer
+tfidf_matrix = vectorizer.fit_transform(item_descriptions)  # Apply TF-IDF transformation to item descriptions
+item_profiles = tfidf_matrix.toarray()  # Convert the sparse matrix to a dense array for easier manipulation
+
+# Step 2: Generate user profiles based on ratings
+# Example: User-Item Rating Matrix (rows: users, cols: items)
+ratings = np.array([
+    [5, 0, 3, 0],  # User 1
+    [0, 4, 0, 5],  # User 2
+    [3, 0, 5, 0],  # User 3
+])
+
+# User profile = Weighted sum of item profiles by ratings
+user_profiles = np.dot(ratings, item_profiles)  # Calculate user profiles by multiplying ratings matrix with item profiles
+
+# Normalize profiles for consistency (this ensures the vectors have unit length)
+user_profiles = user_profiles / np.linalg.norm(user_profiles, axis=1, keepdims=True)
+
+# Step 3: Round the values in item_profiles to 2 decimal places
+rounded_item_profiles = np.round(item_profiles, 2)  # Round each element in item_profiles to 2 decimal places
+
+# Print the rounded item profiles
+print("Rounded Item Profiles:\n", rounded_item_profiles)
