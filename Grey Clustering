@@ -1,0 +1,50 @@
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.cluster import KMeans
+
+# Example Rating Matrix (rows: users, columns: items)
+ratings = np.array([
+    [5, 4, 0, 0, 3],  # User 0's ratings for 5 items
+    [4, 0, 0, 5, 3],  # User 1's ratings for 5 items
+    [0, 0, 4, 3, 2],  # User 2's ratings for 5 items
+    [3, 0, 0, 5, 4]   # User 3's ratings for 5 items
+])
+
+# Step 1: Handle Missing Data (Imputation)
+def impute_missing_values(ratings):
+    # Compute mean ratings for each user (ignoring zeros which represent missing data)
+    mean_ratings = np.nanmean(np.where(ratings == 0, np.nan, ratings), axis=1)
+    
+    # Replace missing values (zeros) with the mean ratings of corresponding users
+    imputed = np.where(ratings == 0, mean_ratings[:, None], ratings)
+    return imputed
+
+# Impute the missing ratings
+imputed_ratings = impute_missing_values(ratings)
+
+# Step 2: Calculate Similarity Matrix (Cosine Similarity)
+similarity_matrix = cosine_similarity(imputed_ratings)
+
+# Step 3: Perform Clustering using KMeans (Group users into clusters)
+kmeans = KMeans(n_clusters=2, random_state=42)  # 2 clusters in this case
+clusters = kmeans.fit_predict(imputed_ratings)
+
+# Step 4: Recommend Items Based on Cluster and Similarity
+def recommend(user_id, ratings, clusters, similarity_matrix, top_n=2):
+    # Find the cluster of the given user
+    cluster = clusters[user_id]
+    
+    # Find other users in the same cluster (excluding the current user)
+    similar_users = [i for i in range(len(clusters)) if clusters[i] == cluster and i != user_id]
+    
+    # Compute weighted ratings for similar users using the similarity matrix
+    weighted_ratings = np.dot(similarity_matrix[user_id, similar_users], ratings[similar_users])
+    
+    # Get the top N recommendations based on weighted ratings
+    recommendations = np.argsort(weighted_ratings)[::-1][:top_n]
+    
+    return recommendations
+
+# Example Recommendation for User 0
+recommendations = recommend(3, imputed_ratings, clusters, similarity_matrix)
+print("Recommendations for User 0:", recommendations)
